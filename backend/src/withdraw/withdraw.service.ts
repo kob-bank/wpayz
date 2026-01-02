@@ -85,7 +85,7 @@ export class WithdrawService {
         {
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${jwt}`,
+            Authorization: jwt,
           },
         },
       );

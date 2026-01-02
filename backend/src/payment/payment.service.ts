@@ -94,7 +94,7 @@ export class PaymentService {
         {
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${jwt}`,
+            Authorization: jwt,
           },
         },
       );
@@ -199,7 +199,7 @@ export class PaymentService {
     const resp = await axios.get(`${host}/api/wpayz/balance`, {
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${jwt}`,
+        Authorization: jwt,
       },
     });
 
