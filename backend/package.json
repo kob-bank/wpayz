@@ -24,7 +24,7 @@
   "dependencies": {
     "@kob-bank/common": "^1.40.1",
     "@kob-bank/logger": "^0.6.1",
-    "@nestjs/cache-manager": "^2.3.0",
+    "@nestjs/cache-manager": "^3.1.0",
     "@nestjs/common": "^10.4.6",
     "@nestjs/config": "^3.3.0",
     "@nestjs/core": "^10.4.6",
