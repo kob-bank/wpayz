@@ -44,6 +44,7 @@ import {
   DepositRepository,
   UpdatePaymentInterface,
 } from '@kob-bank/common/deposit';
+import { QrExtractorService } from '../wpayz/qr-extractor.service';
 
 @Injectable()
 export class PaymentService {
@@ -53,6 +54,7 @@ export class PaymentService {
     private readonly configService: ConfigService,
     private readonly depositRepository: DepositRepository,
     private readonly boCallbackService: BoCallbackService,
+    private readonly qrExtractorService: QrExtractorService,
   ) {}
 
   async requestPayment(
@@ -115,13 +117,31 @@ export class PaymentService {
         );
       }
 
+      // Extract QR code from payUrl (WPayz returns a payment page URL, not QR data)
+      let qrCode = '';
+      if (data.payUrl) {
+        this.logger.debug(`Extracting QR from payUrl: ${data.payUrl}`);
+        try {
+          qrCode = await this.qrExtractorService.extractQrFromPayUrl(
+            data.payUrl,
+          );
+          this.logger.debug(
+            `Successfully extracted QR code (${qrCode.length} chars)`,
+          );
+        } catch (error) {
+          this.logger.error(`Failed to extract QR: ${error.message}`);
+          // Fall back to payUrl if extraction fails
+          qrCode = data.payUrl;
+        }
+      }
+
       // QR code expires in 15 minutes by default
       const expiredAt = dayjs().add(15, 'minutes').tz('Asia/Bangkok').toDate();
 
       const updatedTx = await this.depositRepository.paymentCreated(tx._id, {
         payee: dto.fullName,
         payAmount: data.payUrl ? dto.amount : data.amount,
-        qrCode: data.payUrl || '',
+        qrCode: qrCode,
         systemRef: data.paymentId,
         systemOrderNo: data.transactionId,
         fee: dto.fee || 0,
@@ -136,7 +156,7 @@ export class PaymentService {
           systemRef: data.paymentId,
           payee: dto.fullName,
           payAmount: dto.amount,
-          qrCode: data.payUrl || '',
+          qrCode: qrCode,
           expiredDate: sub(expiredAt, { minutes: 1 }).toISOString(),
         },
       };

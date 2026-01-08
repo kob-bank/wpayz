@@ -39,6 +39,7 @@ import { Withdraw, WithdrawSchema } from './withdraw/withdraw.schema';
 
 import { CommonModule as KobCommonModule } from '@kob-bank/common/common';
 import { QueueModule } from '@kob-bank/common/queue';
+import { WpayzModule } from './wpayz/wpayz.module';
 
 const PROVIDER = ProviderEnum.WPAYZ;
 
@@ -125,6 +126,7 @@ const PROVIDER = ProviderEnum.WPAYZ;
       },
       inject: [getModelToken(Withdraw.name), TransactionService],
     }),
+    WpayzModule,
     PaymentModule,
     WithdrawModule,
     ReportModule,

@@ -1,4 +1,4 @@
-# Build stage
+# Build stage - use Alpine for smaller build layer
 FROM node:20-alpine AS builder
 
 ARG NPM_TOKEN
@@ -20,8 +20,8 @@ COPY . .
 # Build application
 RUN npm run build
 
-# Production stage
-FROM node:20-alpine
+# Production stage - use Playwright image for browser support
+FROM mcr.microsoft.com/playwright:v1.40.0-focal
 
 ARG NPM_TOKEN
 ENV NPM_TOKEN=${NPM_TOKEN}
@@ -29,8 +29,11 @@ ENV NPM_TOKEN=${NPM_TOKEN}
 WORKDIR /app
 
 # Set timezone
-RUN apk add --no-cache tzdata dumb-init
 ENV TZ="Asia/Bangkok"
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Install dumb-init
+RUN apt-get update && apt-get install -y dumb-init && rm -rf /var/lib/apt/lists/*
 
 # Copy package files
 COPY package*.json ./
@@ -45,8 +48,8 @@ RUN npm install --only=production && \
     rm -f .npmrc
 
 # Create non-root user
-RUN addgroup -S appuser && \
-    adduser -D -S -G appuser appuser && \
+RUN groupadd -r appuser && \
+    useradd -r -g appuser appuser && \
     chown -R appuser:appuser /app
 
 USER appuser
