@@ -1,8 +1,5 @@
-# Build stage - use Alpine for smaller build layer
+# Build stage
 FROM node:20-alpine AS builder
-
-ARG NPM_TOKEN
-ENV NPM_TOKEN=${NPM_TOKEN}
 
 WORKDIR /app
 
@@ -22,9 +19,6 @@ RUN npm run build
 
 # Production stage - use Playwright image for browser support
 FROM mcr.microsoft.com/playwright:v1.40.0-focal
-
-ARG NPM_TOKEN
-ENV NPM_TOKEN=${NPM_TOKEN}
 
 WORKDIR /app
 
