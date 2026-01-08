@@ -1,0 +1,79 @@
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  name: {{ .Chart.Name }}-{{ .Values.SITE | default "default" }}-backend-deployment
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}-{{ .Values.SITE | default "default" }}-backend-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}-{{ .Values.SITE | default "default" }}-backend-pod
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}-{{ .Values.SITE | default "default" }}-backend-pod
+    spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      # Graceful shutdown period
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: {{ .Chart.Name }}-{{ .Values.SITE | default "default" }}-backend-container
+          image: registry.digitalocean.com/kob-payment/{{ .Values.image.backend.name | default (printf "%s-backend" .Chart.Name) }}:{{ .Values.image.backend.tag | default .Chart.AppVersion }}
+          imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: "100m" # 0.05 CPU
+              memory: "250M"
+            limits:
+              cpu: "200m" # 0.2 CPU
+              memory: "512M"
+          envFrom:
+            - configMapRef:
+                name: elasticsearch-config
+            - configMapRef:
+                name: {{ .Chart.Name }}-{{ .Values.SITE | default "default" }}-backend-config
+            - configMapRef:
+                name: redis-config
+          # Startup probe - ตรวจสอบว่า application start up สำเร็จหรือยัง
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 2
+            failureThreshold: 30
+            timeoutSeconds: 5
+          # Readiness probe - ตรวจสอบว่าพร้อมรับ traffic หรือไม่
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+            successThreshold: 1
+            timeoutSeconds: 5
+          # Liveness probe - ตรวจสอบว่า container ยังทำงานปกติหรือไม่
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 3
+            successThreshold: 1
+            timeoutSeconds: 5
+          # Lifecycle hooks สำหรับ graceful shutdown
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 10"]
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

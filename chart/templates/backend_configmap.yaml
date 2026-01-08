@@ -1,0 +1,14 @@
+# This secret is used to set the initial credentials of the node container.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Chart.Name }}-{{ .Values.SITE | default "default" }}-backend-config
+data:
+  SITE: {{ .Values.SITE | quote }}
+  MONGO_URI: {{ .Values.BACKEND_MONGO_URI | quote }}
+  REDIS_URI: {{ .Values.BACKEND_REDIS_URI | quote }}
+  REDIS_QUEUE_URI: {{ .Values.BACKEND_REDIS_QUEUE_URI | quote }}
+  API_HOST: {{ .Values.BACKEND_API_HOST | default .Values.BACKEND_WPAYZ_API_URL | quote }}
+  PORT: {{ .Values.BACKEND_PORT | quote }}
+  APPLICATION_NAME: {{ .Chart.Name }}
+  LOG_ELASTIC_APP_INDEX: payment-provider-{{ .Chart.Name }}

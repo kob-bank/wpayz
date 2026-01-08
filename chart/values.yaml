@@ -1,0 +1,29 @@
+nodeSelector:
+  doks.digitalocean.com/node-pool: worker-cluster-payment-pool
+
+image:
+  backend:
+    name:
+    tag:
+
+service:
+  type: NodePort
+  port: 80
+
+tolerations:
+  - key: "node-for-project.megane.io"
+    operator: "Equal"
+    value: "payment"
+    effect: "NoSchedule"
+
+SITE: ""
+BACKEND_HOST: ""
+BACKEND_MONGO_URI: ""
+BACKEND_REDIS_URI: ""
+BACKEND_REDIS_QUEUE_URI: ""
+BACKEND_WPAYZ_API_URL: ""
+BACKEND_PORT: "3000"
+BACKEND_MIN_REPLICA: 1
+BACKEND_MAX_REPLICA: 5
+BACKEND_TARGET_CPU: 80
+BACKEND_TARGET_MEM: 80
