@@ -3,6 +3,7 @@ export interface WpayzWithdrawResponseDataInterface {
   fundOutStatus: string;
   message: string;
   transactionId: string;
+  amount?: number;
 }
 
 export interface WpayzWithdrawResponseInterface {

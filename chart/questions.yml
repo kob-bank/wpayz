@@ -1,0 +1,21 @@
+labels:
+  io.cattle.role: project # options are cluster/project
+  io.rancher.app_min_version: 9.0.2
+questions:
+  - variable: SITE
+    label: "SITE"
+    description: "eg. production"
+    type: string
+    default: "production"
+  - variable: BACKEND_MONGO_URI
+    label: "[BACKEND] MONGO_URI"
+    type: string
+    default: "mongodb://localhost/wpayz"
+  - variable: BACKEND_HOST
+    label: "[BACKEND] HOST"
+    type: string
+    default: "cb-wpayz.website"
+  - variable: BACKEND_API_HOST
+    label: "[BACKEND] API_HOST"
+    type: string
+    default: ""

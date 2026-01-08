@@ -1,0 +1,37 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Chart.Name }}-{{ .Values.SITE | default "default" }}-backend-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Chart.Name }}-{{ .Values.SITE | default "default" }}-backend-deployment
+  minReplicas: {{ .Values.BACKEND_MIN_REPLICA | default 1 }}
+  maxReplicas: {{ .Values.BACKEND_MAX_REPLICA | default 5 }}
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60  # Wait 60 seconds to avoid sudden scale up
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300  # Wait 5 minutes before scaling down to avoid fluctuations
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: {{ .Values.BACKEND_TARGET_CPU | default 80 }}
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: {{ .Values.BACKEND_TARGET_MEM | default 80 }}

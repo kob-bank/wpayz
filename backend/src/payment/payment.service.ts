@@ -34,14 +34,17 @@ import {
   GenericProviderDepositReqDto,
   GenericProviderDepositRespDto,
   PaymentMethodEnum,
+} from '@kob-bank/common';
+import {
   UpstreamErrorException,
   ProviderRejectedException,
-} from '@kob-bank/common';
+} from '@kob-bank/common/exceptions';
 import { Deposit } from '../deposit/deposit.schema';
 import {
   DepositRepository,
   UpdatePaymentInterface,
 } from '@kob-bank/common/deposit';
+import { QrExtractorService } from '../wpayz/qr-extractor.service';
 
 @Injectable()
 export class PaymentService {
@@ -51,6 +54,7 @@ export class PaymentService {
     private readonly configService: ConfigService,
     private readonly depositRepository: DepositRepository,
     private readonly boCallbackService: BoCallbackService,
+    private readonly qrExtractorService: QrExtractorService,
   ) {}
 
   async requestPayment(
@@ -72,7 +76,7 @@ export class PaymentService {
         amount: dto.amount,
         redirectUrl: dto.params.resultURL,
         accountNo: dto.accountNo,
-        accountName: dto.accountName,
+        accountName: dto.fullName,
         bankCode: dto.accountBankCode,
       };
 
@@ -103,7 +107,7 @@ export class PaymentService {
 
       if (resp.data.statusCode !== 200) {
         await this.depositRepository.paymentCreateFailed(tx._id, {
-          errorCode: resp.data.statusCode,
+          errorCode: String(resp.data.statusCode),
           errorMessage: resp.data.data?.message || 'Payment creation failed',
         });
 
@@ -113,16 +117,34 @@ export class PaymentService {
         );
       }
 
+      // Extract QR code from payUrl (WPayz returns a payment page URL, not QR data)
+      let qrCode = '';
+      if (data.payUrl) {
+        this.logger.debug(`Extracting QR from payUrl: ${data.payUrl}`);
+        try {
+          qrCode = await this.qrExtractorService.extractQrFromPayUrl(
+            data.payUrl,
+          );
+          this.logger.debug(
+            `Successfully extracted QR code (${qrCode.length} chars)`,
+          );
+        } catch (error) {
+          this.logger.error(`Failed to extract QR: ${error.message}`);
+          // Fall back to payUrl if extraction fails
+          qrCode = data.payUrl;
+        }
+      }
+
       // QR code expires in 15 minutes by default
       const expiredAt = dayjs().add(15, 'minutes').tz('Asia/Bangkok').toDate();
 
       const updatedTx = await this.depositRepository.paymentCreated(tx._id, {
-        payee: dto.accountName,
+        payee: dto.fullName,
         payAmount: data.payUrl ? dto.amount : data.amount,
-        qrCode: data.payUrl || '',
+        qrCode: qrCode,
         systemRef: data.paymentId,
         systemOrderNo: data.transactionId,
-        fee: dto.params.fee || 0,
+        fee: dto.fee || 0,
         expiredAt: expiredAt,
       });
 
@@ -132,9 +154,9 @@ export class PaymentService {
           id: tx._id.toString(),
           merchantRef: data.transactionId,
           systemRef: data.paymentId,
-          payee: dto.accountName,
+          payee: dto.fullName,
           payAmount: dto.amount,
-          qrCode: data.payUrl || '',
+          qrCode: qrCode,
           expiredDate: sub(expiredAt, { minutes: 1 }).toISOString(),
         },
       };

@@ -2,7 +2,7 @@ import { IsString, IsNumber, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { WpayzProviderParams } from '@kob-bank/common';
 
-export class WithdrawReqDto {
+export default class WithdrawReqDto {
   @ApiProperty()
   @IsString()
   transactionId: string;

@@ -1,20 +1,44 @@
-import { Controller, Get, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ProviderReportRespDto } from '@kob-bank/common';
+import {
+  ReportController as KobReportController,
+  TimeDifferencePresetEnum,
+} from '@kob-bank/common/report';
+import { ReportService } from './report.service';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 
-@ApiTags('Report')
 @Controller('report')
-export class ReportController {
-  @Get('transactions')
-  @ApiOperation({ summary: 'Get transaction report' })
-  async getTransactions(
-    @Query('startDate') startDate: string,
-    @Query('endDate') endDate: string,
+export class ReportController extends KobReportController {
+  constructor(reportService: ReportService) {
+    super(reportService);
+  }
+
+  @Get(':site/:type')
+  async report(
+    @Param('site') site: string,
+    @Param('type') type: string,
+    @Query('searchKeyword') search: string,
+    @Query('from') from: string,
+    @Query('to') to: string,
+    @Query('offset') offset: string,
+    @Query('limit') limit: string,
+  ): Promise<ProviderReportRespDto> {
+    return await this.getAllTransactions(
+      site,
+      type,
+      search,
+      from,
+      to,
+      offset,
+      limit,
+    );
+  }
+
+  @Get(':site/:type/latency')
+  async latency(
+    @Param('site') site: string,
+    @Param('type') type: string,
+    @Query('preset') preset: TimeDifferencePresetEnum,
   ) {
-    // Placeholder for transaction report
-    return {
-      message: 'Transaction report endpoint',
-      startDate,
-      endDate,
-    };
+    return await this.getTimeDifferenceReport(site, type, preset);
   }
 }
