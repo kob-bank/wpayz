@@ -1,72 +1,18 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
+import { Deposit as DefaultDeposit } from '@kob-bank/common/deposit';
 
-export type DepositDocument = Deposit & Document;
-
-@Schema({ timestamps: true })
-export class Deposit {
-  @Prop({ required: true })
-  merchantId: string;
-
-  @Prop({ required: true })
+@Schema({ collection: 'transactions', timestamps: true })
+export class Deposit extends DefaultDeposit {
+  @Prop()
   agentId: string;
 
-  @Prop({ required: true })
-  site: string;
-
-  @Prop({ required: true })
-  customerId: string;
-
-  @Prop({ required: true })
-  amount: number;
-
-  @Prop({ default: 0 })
-  fee: number;
-
-  @Prop({ default: 0 })
-  payAmount: number;
-
-  @Prop()
-  payee: string;
-
-  @Prop()
-  qrCode: string;
-
-  @Prop()
-  systemRef: string;
-
-  @Prop()
+  @Prop({ index: true })
   systemOrderNo: string;
 
   @Prop()
-  paymentStatus: string;
-
-  @Prop({ default: 'PENDING' })
-  status: string;
-
-  @Prop()
-  expiredAt: Date;
-
-  @Prop()
-  successedAt: Date;
-
-  @Prop()
-  callback: string;
-
-  @Prop()
-  callbackPayload: any;
-
-  @Prop()
-  gatewayId: string;
-
-  @Prop()
-  paymentMethods: string;
-
-  @Prop()
-  errorCode: string;
-
-  @Prop()
-  errorMessage: string;
+  merchantId: string;
 }
 
+export type DepositDocument = Deposit & Document;
 export const DepositSchema = SchemaFactory.createForClass(Deposit);

@@ -1,15 +1,25 @@
 import { Controller, Get } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { HealthService } from './health.service';
+import {
+  HealthCheck,
+  HealthCheckService,
+  MongooseHealthIndicator,
+  MemoryHealthIndicator,
+} from '@nestjs/terminus';
 
-@ApiTags('Health')
 @Controller('health')
 export class HealthController {
-  constructor(private readonly healthService: HealthService) {}
+  constructor(
+    private health: HealthCheckService,
+    private mongoose: MongooseHealthIndicator,
+    private memory: MemoryHealthIndicator,
+  ) {}
 
   @Get()
-  @ApiOperation({ summary: 'Health check' })
+  @HealthCheck()
   check() {
-    return this.healthService.check();
+    return this.health.check([
+      async () => this.mongoose.pingCheck('mongoose'),
+      async () => this.memory.checkHeap('memory_heap', 512 * 1024 * 1024),
+    ]);
   }
 }

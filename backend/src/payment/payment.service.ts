@@ -34,9 +34,11 @@ import {
   GenericProviderDepositReqDto,
   GenericProviderDepositRespDto,
   PaymentMethodEnum,
+} from '@kob-bank/common';
+import {
   UpstreamErrorException,
   ProviderRejectedException,
-} from '@kob-bank/common';
+} from '@kob-bank/common/exceptions';
 import { Deposit } from '../deposit/deposit.schema';
 import {
   DepositRepository,
@@ -72,7 +74,7 @@ export class PaymentService {
         amount: dto.amount,
         redirectUrl: dto.params.resultURL,
         accountNo: dto.accountNo,
-        accountName: dto.accountName,
+        accountName: dto.fullName,
         bankCode: dto.accountBankCode,
       };
 
@@ -103,7 +105,7 @@ export class PaymentService {
 
       if (resp.data.statusCode !== 200) {
         await this.depositRepository.paymentCreateFailed(tx._id, {
-          errorCode: resp.data.statusCode,
+          errorCode: String(resp.data.statusCode),
           errorMessage: resp.data.data?.message || 'Payment creation failed',
         });
 
@@ -117,12 +119,12 @@ export class PaymentService {
       const expiredAt = dayjs().add(15, 'minutes').tz('Asia/Bangkok').toDate();
 
       const updatedTx = await this.depositRepository.paymentCreated(tx._id, {
-        payee: dto.accountName,
+        payee: dto.fullName,
         payAmount: data.payUrl ? dto.amount : data.amount,
         qrCode: data.payUrl || '',
         systemRef: data.paymentId,
         systemOrderNo: data.transactionId,
-        fee: dto.params.fee || 0,
+        fee: dto.fee || 0,
         expiredAt: expiredAt,
       });
 
@@ -132,7 +134,7 @@ export class PaymentService {
           id: tx._id.toString(),
           merchantRef: data.transactionId,
           systemRef: data.paymentId,
-          payee: dto.accountName,
+          payee: dto.fullName,
           payAmount: dto.amount,
           qrCode: data.payUrl || '',
           expiredDate: sub(expiredAt, { minutes: 1 }).toISOString(),
