@@ -1,6 +1,6 @@
 export default () => ({
   database: {
-    uri: process.env.MONGODB_URI,
+    uri: process.env.MONGO_URI,
   },
   apiHost: process.env.API_HOST,
   redis: process.env.REDIS_URI,
