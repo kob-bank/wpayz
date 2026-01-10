@@ -22,7 +22,7 @@
     "test:integration": "jest --config ./test/jest-integration.json"
   },
   "dependencies": {
-    "@kob-bank/common": "^1.44.0",
+    "@kob-bank/common": "^1.44.3",
     "@kob-bank/logger": "^0.6.1",
     "@nestjs/cache-manager": "^3.1.0",
     "@nestjs/common": "^10.4.6",

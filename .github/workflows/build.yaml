@@ -36,6 +36,8 @@ jobs:
           file: ./backend/Dockerfile
           push: true
           tags: registry.digitalocean.com/kob-payment/wpayz-backend:${{ steps.tag_version.outputs.new_tag }}
+          build-args: |
+            NPM_TOKEN=${{ secrets.NPM_TOKEN }}
       - name: Push Helm chart
         uses: bsord/helm-push@v4
         with:
