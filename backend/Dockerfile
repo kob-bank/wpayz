@@ -10,7 +10,7 @@ COPY package*.json ./
 COPY .npmrc ./
 
 # Replace NPM_TOKEN placeholder in .npmrc and install dependencies
-RUN envsubst < .npmrc > .npmrc.tmp && mv .npmrc.tmp .npmrc && \
+RUN sed -i "s|\${NPM_TOKEN}|${NPM_TOKEN}|g" .npmrc && \
     npm install && \
     npm cache clean --force
 
@@ -42,7 +42,7 @@ COPY .npmrc ./
 COPY --from=builder /app/dist ./dist
 
 # Replace NPM_TOKEN placeholder and install production dependencies only
-RUN envsubst < .npmrc > .npmrc.tmp && mv .npmrc.tmp .npmrc && \
+RUN sed -i "s|\${NPM_TOKEN}|${NPM_TOKEN}|g" .npmrc && \
     npm install --only=production && \
     npm cache clean --force && \
     rm -f .npmrc
