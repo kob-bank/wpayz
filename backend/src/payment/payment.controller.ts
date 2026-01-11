@@ -1,22 +1,21 @@
-import { Controller, Post, Body, Get, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Body, Controller, Post, Logger } from '@nestjs/common';
 import { PaymentService } from './payment.service';
-import WpayzCallbackDto from './dto/wpayz-callback.dto';
+import {
+  GenericProviderDepositReqDto,
+  WpayzProviderParams,
+} from '@kob-bank/common';
 
-@ApiTags('Payment')
-@Controller('payment')
+@Controller()
 export class PaymentController {
+  private readonly logger = new Logger(PaymentController.name);
+
   constructor(private readonly paymentService: PaymentService) {}
 
-  @Post('callback')
-  @ApiOperation({ summary: 'Callback from WPayz' })
-  async callback(@Body() dto: WpayzCallbackDto) {
-    return this.paymentService.callback(dto);
-  }
-
-  @Get('status')
-  @ApiOperation({ summary: 'Check payment status' })
-  async checkStatus(@Query('id') id: string) {
-    return this.paymentService.checkOrderStatus(id);
+  @Post('payment')
+  async requestPayment(
+    @Body() dto: GenericProviderDepositReqDto<WpayzProviderParams>,
+  ) {
+    this.logger.log(`Payment request received for user: ${dto.username}, amount: ${dto.amount}`);
+    return await this.paymentService.requestPayment(dto);
   }
 }
