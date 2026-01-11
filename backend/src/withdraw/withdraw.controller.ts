@@ -13,7 +13,7 @@ export class WithdrawController {
   @Post()
   @ApiOperation({ summary: 'Create withdrawal' })
   async create(@Body() dto: WithdrawReqDto) {
-    this.logger.log(`Withdraw request received for user: ${dto.username}, amount: ${dto.amount}`);
+    this.logger.log(`Withdraw request received for customer: ${dto.customerId}, amount: ${dto.amount}`);
     return this.withdrawService.create(dto);
   }
 
