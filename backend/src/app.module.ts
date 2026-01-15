@@ -15,6 +15,7 @@ import {
 import { AppController } from './app.controller';
 import configuration from './config/configuration';
 import { PaymentModule } from './payment/payment.module';
+import { BalanceModule } from './balance/balance.module';
 import { ReportModule } from './report/report.module';
 import { WithdrawModule } from './withdraw/withdraw.module';
 import { HealthModule } from './health/health.module';
@@ -128,6 +129,7 @@ const PROVIDER = ProviderEnum.WPAYZ;
     }),
     WpayzModule,
     PaymentModule,
+    BalanceModule,
     WithdrawModule,
     ReportModule,
     BoCallbackModule.forRootAsync({

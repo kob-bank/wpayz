@@ -1,6 +1,5 @@
-# Build stage - use Alpine for smaller build layer
+# Build stage
 FROM node:20-alpine AS builder
-
 ARG NPM_TOKEN
 ENV NPM_TOKEN=${NPM_TOKEN}
 
@@ -10,8 +9,9 @@ WORKDIR /app
 COPY package*.json ./
 COPY .npmrc ./
 
-# Install dependencies
-RUN npm install && \
+# Replace NPM_TOKEN placeholder in .npmrc and install dependencies
+RUN sed -i "s|\${NPM_TOKEN}|${NPM_TOKEN}|g" .npmrc && \
+    npm install && \
     npm cache clean --force
 
 # Copy source code
@@ -22,7 +22,6 @@ RUN npm run build
 
 # Production stage - use Playwright image for browser support
 FROM mcr.microsoft.com/playwright:v1.40.0-focal
-
 ARG NPM_TOKEN
 ENV NPM_TOKEN=${NPM_TOKEN}
 
@@ -42,8 +41,9 @@ COPY .npmrc ./
 # Copy built application
 COPY --from=builder /app/dist ./dist
 
-# Install production dependencies only
-RUN npm install --only=production && \
+# Replace NPM_TOKEN placeholder and install production dependencies only
+RUN sed -i "s|\${NPM_TOKEN}|${NPM_TOKEN}|g" .npmrc && \
+    npm install --only=production && \
     npm cache clean --force && \
     rm -f .npmrc
 
