@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Logger } from '@nestjs/common';
+import { Body, Controller, Post, Get, Query } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import WpayzCallbackDto from './dto/wpayz-callback.dto';
 import {
@@ -9,13 +9,11 @@ import {
   GenericProviderDepositRespDto,
 } from '@kob-bank/common';
 
-@ApiTags('Payment')
 @Controller()
 export class PaymentController {
-  private readonly logger = new Logger(PaymentController.name);
+  constructor(private readonly paymentService: PaymentService) {}
 
   @Post('payment')
-  @ApiOperation({ summary: 'Request payment (create deposit QR)' })
   async requestPayment(
     @Body() dto: GenericProviderDepositReqDto<WpayzProviderParams>,
   ): Promise<ApiResponseDto<GenericProviderDepositRespDto>> {
@@ -23,7 +21,6 @@ export class PaymentController {
   }
 
   @Post('balance')
-  @ApiOperation({ summary: 'Check balance' })
   async balance(
     @Body() dto: GenericProviderBalanceReqDto<WpayzProviderParams>,
   ) {
@@ -31,16 +28,12 @@ export class PaymentController {
   }
 
   @Post('callback')
-  @ApiOperation({ summary: 'Callback from WPayz' })
   async callback(@Body() dto: WpayzCallbackDto) {
     return this.paymentService.callback(dto);
   }
 
-  @Post('payment')
-  async requestPayment(
-    @Body() dto: GenericProviderDepositReqDto<WpayzProviderParams>,
-  ) {
-    this.logger.log(`Payment request received for user: ${dto.username}, amount: ${dto.amount}`);
-    return await this.paymentService.requestPayment(dto);
+  @Get('status')
+  async checkStatus(@Query('id') id: string) {
+    return this.paymentService.checkOrderStatus(id);
   }
 }
