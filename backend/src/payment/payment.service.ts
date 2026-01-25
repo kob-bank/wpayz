@@ -34,6 +34,8 @@ import {
   GenericProviderDepositReqDto,
   GenericProviderDepositRespDto,
   PaymentMethodEnum,
+  BankCode,
+  mapBankTag2UniformBankTag,
 } from '@kob-bank/common';
 import {
   UpstreamErrorException,
@@ -77,7 +79,7 @@ export class PaymentService {
         redirectUrl: dto.params.resultURL,
         accountNo: dto.accountNo,
         accountName: dto.fullName,
-        bankCode: dto.accountBankCode,
+        bankCode: BankCode[mapBankTag2UniformBankTag(dto.accountBankCode.toLowerCase())],
       };
 
       const jwt = await new SignJWT({
