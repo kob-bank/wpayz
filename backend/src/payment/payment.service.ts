@@ -77,7 +77,7 @@ export class PaymentService {
         redirectUrl: dto.params.resultURL,
         accountNo: dto.accountNo,
         accountName: dto.fullName,
-        bankCode: dto.accountBankCode,
+        bankCode: dto.accountBankCode.toUpperCase(),
       };
 
       const jwt = await new SignJWT({
