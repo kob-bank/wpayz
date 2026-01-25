@@ -2,6 +2,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { KobLogger } from '@kob-bank/logger';
@@ -58,13 +59,43 @@ export class PaymentService {
   ) {}
 
   async requestPayment(
-    dto: GenericProviderDepositReqDto<WpayzProviderParams>,
+    dto: GenericProviderDepositReqDto<WpayzProviderParams> & { site?: string },
   ): Promise<ApiResponseDto<GenericProviderDepositRespDto>> {
     try {
+      // Handle site from both locations for backward compatibility
+      // 1. Prefer params.site (from payment-ui or new kob-payment-gateway)
+      // 2. Fallback to root level site (from old kob-payment-gateway)
+      const site = dto.params?.site || dto.site;
+      
+      if (!site) {
+        this.logger.error(
+          'Missing required site field',
+          '',
+          {
+            params: dto.params,
+            rootSite: dto.site,
+            hasParams: !!dto.params,
+            paramsKeys: dto.params ? Object.keys(dto.params) : [],
+          },
+        );
+        throw new BadRequestException('site is required (params.site or root level)');
+      }
+
+      if (!dto.params?.agentId) {
+        this.logger.error(
+          'Missing required params.agentId',
+          '',
+          {
+            params: dto.params,
+          },
+        );
+        throw new BadRequestException('params.agentId is required');
+      }
+
       const tx = await this.depositRepository.create({
         merchantId: dto.params.agentId,
         agentId: dto.params.agentId,
-        site: dto.params.site,
+        site: site,
         customerId: dto.username,
         amount: dto.amount,
         callback: dto.params.callbackURL,

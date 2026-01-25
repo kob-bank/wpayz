@@ -1,11 +1,11 @@
 import { Body, Controller, Post, Get, Query } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import WpayzCallbackDto from './dto/wpayz-callback.dto';
+import { WpayzPaymentReqDto } from './dto/wpayz-payment.dto';
 import {
   WpayzProviderParams,
   ApiResponseDto,
   GenericProviderBalanceReqDto,
-  GenericProviderDepositReqDto,
   GenericProviderDepositRespDto,
 } from '@kob-bank/common';
 
@@ -15,7 +15,7 @@ export class PaymentController {
 
   @Post('payment')
   async requestPayment(
-    @Body() dto: GenericProviderDepositReqDto<WpayzProviderParams>,
+    @Body() dto: WpayzPaymentReqDto,
   ): Promise<ApiResponseDto<GenericProviderDepositRespDto>> {
     return await this.paymentService.requestPayment(dto);
   }
