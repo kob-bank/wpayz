@@ -5,19 +5,17 @@ import axios from 'axios';
 export class QrExtractorService {
   private readonly logger = new Logger(QrExtractorService.name);
 
-  // trustsig API base URL (from WPayz frontend config)
-  private readonly TRUSTSIG_API_URL = 'https://mainnet.trustsig.xyz/v1';
-
   /**
-   * Extract QR code from WPayz payment page by calling trustsig API directly
-   * @param payUrl - The payment URL from WPayz API (e.g., https://nova777881.xyz/pay/{paymentId})
+   * Extract QR code from WPayz payment page by calling internal API
+   * @param payUrl - The payment URL from WPayz API (e.g., https://vibe777881.xyz/pay/{paymentId})
    * @returns PromptPay QR code string (e.g., "00020101021129370016A000000677010111...")
    */
   async extractQrFromPayUrl(payUrl: string): Promise<string> {
     try {
-      // Extract paymentId from payUrl
-      // Format: https://nova777881.xyz/pay/{paymentId} or https://alpha777881.xyz/pay/{paymentId}
+      // Extract base URL and paymentId from payUrl
+      // Format: https://vibe777881.xyz/pay/{paymentId}
       const urlObj = new URL(payUrl);
+      const baseUrl = `${urlObj.protocol}//${urlObj.host}`;
       const pathParts = urlObj.pathname.split('/');
       const paymentId = pathParts[pathParts.length - 1];
 
@@ -25,38 +23,42 @@ export class QrExtractorService {
         throw new Error(`Could not extract paymentId from payUrl: ${payUrl}`);
       }
 
-      this.logger.debug(`Extracting QR for paymentId: ${paymentId}`);
+      this.logger.debug(
+        `Extracting QR for paymentId: ${paymentId} from ${baseUrl}`,
+      );
 
-      // Call trustsig API to get payment details including QR code
+      // Call internal API to get payment details including QR code
+      // API: /api/get-payment-info?invoice_id={paymentId}
       const response = await axios.get(
-        `${this.TRUSTSIG_API_URL}/payment/${paymentId}`,
+        `${baseUrl}/api/get-payment-info?invoice_id=${paymentId}`,
         {
           timeout: 10000,
           headers: {
-            Accept: 'application/json',
+            Accept: '*/*',
+            'User-Agent': 'Mozilla/5.0',
+            source_id: 'xpays',
+            Referer: payUrl,
           },
         },
       );
 
       if (!response.data?.success) {
         throw new Error(
-          response.data?.error || 'Failed to get payment details from trustsig',
+          response.data?.error ||
+            'Failed to get payment details from WPayz API',
         );
       }
 
       // Extract QR code from response
-      // Expected response format: { success: true, data: { qrCode: "000201...", ... } }
-      const qrCode =
-        response.data?.data?.qrCode ||
-        response.data?.data?.qr_code ||
-        response.data?.data?.promptpayQR ||
-        response.data?.data?.originCode;
+      // Response format: { success: true, data: { payment: { payment_qr: "000201...", payment_qr_base64: "data:image/png;base64,..." } } }
+      const payment = response.data?.data?.payment;
+      const qrCode = payment?.payment_qr;
 
       if (!qrCode) {
         this.logger.warn(
-          `QR code not found in trustsig response, available fields: ${Object.keys(response.data?.data || {}).join(', ')}`,
+          `QR code not found in response, available fields: ${Object.keys(payment || {}).join(', ')}`,
         );
-        throw new Error('QR code not found in trustsig API response');
+        throw new Error('QR code not found in WPayz API response');
       }
 
       this.logger.debug(
@@ -64,7 +66,9 @@ export class QrExtractorService {
       );
       return qrCode;
     } catch (error) {
-      this.logger.error(`Failed to extract QR from ${payUrl}: ${error.message}`);
+      this.logger.error(
+        `Failed to extract QR from ${payUrl}: ${error.message}`,
+      );
       throw error;
     }
   }
