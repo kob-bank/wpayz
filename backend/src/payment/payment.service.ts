@@ -75,14 +75,14 @@ export class PaymentService {
       });
 
       // Construct callback URL from HOST (like paydiwa pattern)
-      const host = this.configService.get('host');
+      const callbackHost = this.configService.get('host');
       const payload: WpayzPaymentRequestInterface = {
         amount: dto.amount,
         redirectUrl: dto.params.resultURL,
         accountNo: dto.accountNo,
         accountName: dto.fullName,
         bankCode: BankCode[mapBankTag2UniformBankTag(dto.accountBankCode.toLowerCase())],
-        callbackUrl: `https://${host}/callback`,
+        callbackUrl: `https://${callbackHost}/callback`,
       };
 
       const jwt = await new SignJWT({
@@ -94,11 +94,11 @@ export class PaymentService {
         .setExpirationTime('1h')
         .sign(new TextEncoder().encode(dto.params.secretKey));
 
-      const host = this.configService.get('apiHost');
-      Logger.debug(`requestPayment: ${host}/api/wpayz/qrcode`);
+      const apiHost = this.configService.get('apiHost');
+      Logger.debug(`requestPayment: ${apiHost}/api/wpayz/qrcode`);
 
       const resp = await axios.post<WpayzPaymentResponseInterface>(
-        `${host}/api/wpayz/qrcode`,
+        `${apiHost}/api/wpayz/qrcode`,
         payload,
         {
           headers: {
