@@ -20,8 +20,8 @@ COPY . .
 # Build application
 RUN npm run build
 
-# Production stage - use Playwright image for browser support
-FROM mcr.microsoft.com/playwright:v1.40.0-focal
+# Production stage - use lightweight Node.js image (no Playwright needed)
+FROM node:20-alpine
 ARG NPM_TOKEN
 ENV NPM_TOKEN=${NPM_TOKEN}
 
@@ -29,10 +29,11 @@ WORKDIR /app
 
 # Set timezone
 ENV TZ="Asia/Bangkok"
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+RUN apk add --no-cache tzdata && \
+    ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # Install dumb-init
-RUN apt-get update && apt-get install -y dumb-init && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache dumb-init
 
 # Copy package files
 COPY package*.json ./
@@ -48,8 +49,8 @@ RUN sed -i "s|\${NPM_TOKEN}|${NPM_TOKEN}|g" .npmrc && \
     rm -f .npmrc
 
 # Create non-root user
-RUN groupadd -r appuser && \
-    useradd -r -g appuser appuser && \
+RUN addgroup -g 1001 -S appuser && \
+    adduser -S -u 1001 -G appuser appuser && \
     chown -R appuser:appuser /app
 
 USER appuser
