@@ -62,11 +62,14 @@ export class WithdrawService {
 
     let resp: AxiosResponse<WpayzWithdrawResponseInterface, any>;
     try {
+      // Construct callback URL from HOST (like paydiwa pattern)
+      const callbackHost = this.configService.get('host');
       const payload: WpayzWithdrawRequestInterface = {
         toAccountNo: withdraw.bankAccountNo,
         toAccountName: withdraw.bankAccountName,
         toBankCode: withdraw.bankCode,
         amount: withdraw.amount,
+        callbackUrl: `https://${callbackHost}/callback`,
       };
 
       const jwt = await new SignJWT({
@@ -78,9 +81,9 @@ export class WithdrawService {
         .setExpirationTime('1h')
         .sign(new TextEncoder().encode(dto.params.secretKey));
 
-      const host = this.configService.get('apiHost');
+      const apiHost = this.configService.get('apiHost');
       resp = await axios.post<WpayzWithdrawResponseInterface>(
-        `${host}/api/wpayz/withdraw`,
+        `${apiHost}/api/wpayz/withdraw`,
         payload,
         {
           headers: {
