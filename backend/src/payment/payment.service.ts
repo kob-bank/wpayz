@@ -74,15 +74,14 @@ export class PaymentService {
         paymentMethods: PaymentMethodEnum.QR,
       });
 
-      // Construct callback URL from HOST (like paydiwa pattern)
-      const callbackHost = this.configService.get('host');
+      // Note: WPayz API does not support callbackUrl in payload
+      // Callbacks are configured via webhook settings in WPayz dashboard
       const payload: WpayzPaymentRequestInterface = {
         amount: dto.amount,
         redirectUrl: dto.params.resultURL,
         accountNo: dto.accountNo,
         accountName: dto.fullName,
         bankCode: BankCode[mapBankTag2UniformBankTag(dto.accountBankCode.toLowerCase())],
-        callbackUrl: `https://${callbackHost}/callback`,
       };
 
       const jwt = await new SignJWT({

@@ -62,14 +62,13 @@ export class WithdrawService {
 
     let resp: AxiosResponse<WpayzWithdrawResponseInterface, any>;
     try {
-      // Construct callback URL from HOST (like paydiwa pattern)
-      const callbackHost = this.configService.get('host');
+      // Note: WPayz API does not support callbackUrl in payload
+      // Callbacks are configured via webhook settings in WPayz dashboard
       const payload: WpayzWithdrawRequestInterface = {
         toAccountNo: withdraw.bankAccountNo,
         toAccountName: withdraw.bankAccountName,
         toBankCode: withdraw.bankCode,
         amount: withdraw.amount,
-        callbackUrl: `https://${callbackHost}/callback`,
       };
 
       const jwt = await new SignJWT({

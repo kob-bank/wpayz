@@ -3,5 +3,4 @@ export interface WpayzWithdrawRequestInterface {
   toAccountNo: string;
   toAccountName: string;
   toBankCode: string;
-  callbackUrl?: string;
 }

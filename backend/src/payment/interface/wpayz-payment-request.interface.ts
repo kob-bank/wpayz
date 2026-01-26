@@ -4,5 +4,4 @@ export interface WpayzPaymentRequestInterface {
   accountName: string;
   bankCode: string;
   redirectUrl?: string;
-  callbackUrl?: string;
 }
