@@ -74,12 +74,15 @@ export class PaymentService {
         paymentMethods: PaymentMethodEnum.QR,
       });
 
+      // Construct callback URL from HOST (like paydiwa pattern)
+      const host = this.configService.get('host');
       const payload: WpayzPaymentRequestInterface = {
         amount: dto.amount,
         redirectUrl: dto.params.resultURL,
         accountNo: dto.accountNo,
         accountName: dto.fullName,
         bankCode: BankCode[mapBankTag2UniformBankTag(dto.accountBankCode.toLowerCase())],
+        callbackUrl: `https://${host}/callback`,
       };
 
       const jwt = await new SignJWT({
