@@ -1,6 +1,5 @@
 import {
   BadGatewayException,
-  BadRequestException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -126,19 +125,37 @@ export class WithdrawService {
     };
   }
 
-  async callback(dto: WpayzCallbackDto) {
-    this.logger.debug('callback', JSON.stringify(dto));
-    const withdraw = await this.withdrawRepository
+  /**
+   * Try to handle callback for withdraw
+   * @returns true if handled, false if not found
+   */
+  async tryCallback(dto: WpayzCallbackDto): Promise<boolean> {
+    this.logger.debug('tryCallback', JSON.stringify(dto));
+
+    // Try to find by transactionId or paymentId
+    let withdraw = await this.withdrawRepository
       .getModel()
-      .findOne({
-        systemOrderNo: dto.transactionId,
-      })
+      .findOne({ systemOrderNo: dto.transactionId })
       .exec();
-    if (!withdraw || withdraw.status !== WithdrawStatusEnum.PENDING) {
-      throw new BadRequestException(
-        `withdraw (payment) id ${dto.paymentId} not found`,
-      );
+
+    if (!withdraw) {
+      withdraw = await this.withdrawRepository
+        .getModel()
+        .findOne({ systemRef: dto.paymentId })
+        .exec();
     }
+
+    if (!withdraw) {
+      return false;
+    }
+
+    if (withdraw.status !== WithdrawStatusEnum.PENDING) {
+      this.logger.debug(
+        'callback ' + dto.transactionId + ' update on non pending tx',
+      );
+      return true; // Already processed
+    }
+
     const status =
       dto.status === CallbackStatusEnum.SUCCESSED
         ? WithdrawStatusEnum.SUCCESSED
@@ -156,6 +173,7 @@ export class WithdrawService {
     if (updated.callback) {
       await this.boCallbackService.withdrawCallback(updated._id);
     }
+    return true;
   }
 
   async findOneBySystemOrderNo(systemOrderNo: string): Promise<Withdraw> {

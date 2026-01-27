@@ -175,10 +175,18 @@ export class PaymentService {
     }
   }
 
-  async callback(req: WpayzCallbackDto) {
-    const tx = await this.depositRepository.findOneBySystemRef(req.paymentId);
+  /**
+   * Try to handle callback for deposit
+   * @returns true if handled, false if not found
+   */
+  async tryCallback(req: WpayzCallbackDto): Promise<boolean> {
+    // Try to find by paymentId (systemRef) or transactionId (systemOrderNo)
+    let tx = await this.depositRepository.findOneBySystemRef(req.paymentId);
     if (!tx) {
-      throw new NotFoundException();
+      tx = await this.depositRepository.findOneBySystemOrderNo(req.transactionId);
+    }
+    if (!tx) {
+      return false;
     }
 
     if (tx.status === DepositStatusEnum.PENDING) {
@@ -209,6 +217,7 @@ export class PaymentService {
         isFee: false,
       });
     }
+    return true;
   }
 
   async getBalance(dto: GenericProviderBalanceReqDto<WpayzProviderParams>) {
