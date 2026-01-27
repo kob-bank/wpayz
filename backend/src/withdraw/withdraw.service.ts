@@ -10,7 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import axios, { AxiosError, AxiosResponse } from 'axios';
 import { SignJWT } from 'jose';
 import { KobLogger } from '@kob-bank/logger';
-import { WithdrawStatusEnum } from '@kob-bank/common';
+import { WithdrawStatusEnum, BankCode, mapBankTag2UniformBankTag } from '@kob-bank/common';
 
 import { Withdraw } from './withdraw.schema';
 import { WpayzWithdrawRequestInterface } from './interface/wpayz-withdraw-request.interface';
@@ -67,7 +67,7 @@ export class WithdrawService {
       const payload: WpayzWithdrawRequestInterface = {
         toAccountNo: withdraw.bankAccountNo,
         toAccountName: withdraw.bankAccountName,
-        toBankCode: withdraw.bankCode,
+        toBankCode: BankCode[mapBankTag2UniformBankTag(withdraw.bankCode.toLowerCase())],
         amount: withdraw.amount,
       };
 
