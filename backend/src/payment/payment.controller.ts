@@ -1,6 +1,5 @@
 import { Body, Controller, Post, Get, Query } from '@nestjs/common';
 import { PaymentService } from './payment.service';
-import WpayzCallbackDto from './dto/wpayz-callback.dto';
 import {
   WpayzProviderParams,
   ApiResponseDto,
@@ -25,11 +24,6 @@ export class PaymentController {
     @Body() dto: GenericProviderBalanceReqDto<WpayzProviderParams>,
   ) {
     return await this.paymentService.getBalance(dto);
-  }
-
-  @Post('callback')
-  async callback(@Body() dto: WpayzCallbackDto) {
-    return this.paymentService.callback(dto);
   }
 
   @Get('status')
