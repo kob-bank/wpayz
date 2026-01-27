@@ -1,5 +1,6 @@
 import {
   BadGatewayException,
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   Logger,
