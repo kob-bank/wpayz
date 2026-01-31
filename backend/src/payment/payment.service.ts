@@ -47,6 +47,7 @@ import {
   UpdatePaymentInterface,
 } from '@kob-bank/common/deposit';
 import { QrExtractorService } from '../wpayz/qr-extractor.service';
+import { parsePromptPayAmount } from '../utils/parse-promptpay-amount';
 
 @Injectable()
 export class PaymentService {
@@ -142,9 +143,13 @@ export class PaymentService {
       // QR code expires in 15 minutes by default
       const expiredAt = dayjs().add(15, 'minutes').tz('Asia/Bangkok').toDate();
 
+      // Parse amount from QR code, fallback to dto.amount
+      const qrAmount = parsePromptPayAmount(qrCode);
+      const payAmount = qrAmount ?? dto.amount;
+
       const updatedTx = await this.depositRepository.paymentCreated(tx._id, {
         payee: dto.fullName,
-        payAmount: data.payUrl ? dto.amount : data.amount,
+        payAmount,
         qrCode: qrCode,
         systemRef: data.paymentId,
         systemOrderNo: data.transactionId,
@@ -159,7 +164,7 @@ export class PaymentService {
           merchantRef: data.transactionId,
           systemRef: data.paymentId,
           payee: dto.fullName,
-          payAmount: dto.amount,
+          payAmount,
           qrCode: qrCode,
           expiredDate: sub(expiredAt, { minutes: 1 }).toISOString(),
         },
