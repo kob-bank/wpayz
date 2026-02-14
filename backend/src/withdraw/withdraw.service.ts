@@ -17,7 +17,10 @@ import { WpayzWithdrawRequestInterface } from './interface/wpayz-withdraw-reques
 import { WpayzWithdrawResponseInterface } from './interface/wpayz-withdraw-response.interface';
 import WpayzCallbackDto from '../payment/dto/wpayz-callback.dto';
 import { CallbackStatusEnum } from '../payment/enum/callback-status.enum';
-import WithdrawReqDto from './dto/withdraw.req.dto';
+import WithdrawReqDto, {
+  CryptoWithdrawRequestDto,
+  CryptoWithdrawResponseDto,
+} from './dto/withdraw.req.dto';
 import { WithdrawRepository } from '@kob-bank/common/withdraw';
 import { BoCallbackService } from '@kob-bank/common/bo-callback';
 
@@ -189,5 +192,75 @@ export class WithdrawService {
       site,
       id,
     );
+  }
+
+  async withdrawCrypto(dto: CryptoWithdrawRequestDto): Promise<CryptoWithdrawResponseDto> {
+    this.logger.log(`Crypto withdraw request: ${JSON.stringify({
+      network: dto.network,
+      walletAddress: dto.walletAddress,
+      amountTHB: dto.amountTHB,
+      agentUser: dto.agentUser,
+    })}`);
+
+    // Validate network
+    const validNetworks = ['TRC20', 'ERC20', 'BEP20'];
+    if (!validNetworks.includes(dto.network)) {
+      throw new BadRequestException('Invalid crypto network');
+    }
+
+    let resp: AxiosResponse<CryptoWithdrawResponseDto>;
+    try {
+      const jwt = await new SignJWT({
+        agentId: String(dto.params.agentId),
+        userId: '1',
+      })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setIssuedAt()
+        .setExpirationTime('1h')
+        .sign(new TextEncoder().encode(dto.params.secretKey));
+
+      const apiHost = this.configService.get('apiHost');
+      resp = await axios.post<CryptoWithdrawResponseDto>(
+        `${apiHost}/api/wpayz/withdraw-crypto`,
+        {
+          network: dto.network,
+          walletAddress: dto.walletAddress,
+          amountTHB: dto.amountTHB,
+          agentUser: dto.agentUser,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: jwt,
+          },
+        },
+      );
+    } catch (err) {
+      this.logger.error('Crypto withdrawal error:', JSON.stringify(err));
+      if (err instanceof AxiosError) {
+        Logger.log('Crypto withdrawal error:', err?.response?.data.message);
+        if (err.code === 'ERR_BAD_REQUEST') {
+          throw new BadRequestException(err?.response?.data.message);
+        } else {
+          throw new BadGatewayException(err?.response?.data?.message);
+        }
+      }
+      throw new InternalServerErrorException(
+        'Failed to process crypto withdrawal',
+      );
+    }
+
+    const params = resp.data.data;
+
+    this.logger.log('Crypto withdrawal response:', JSON.stringify(params));
+
+    return {
+      statusCode: resp.data.statusCode,
+      responseMessage: resp.data?.responseMessage,
+      data: {
+        paymentId: params?.paymentId,
+        amount: params?.amount,
+      },
+    };
   }
 }
