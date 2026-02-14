@@ -1,7 +1,10 @@
 import { Controller, Post, Body, Get, Param, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { WithdrawService } from './withdraw.service';
-import WithdrawReqDto from './dto/withdraw.req.dto';
+import WithdrawReqDto, {
+  CryptoWithdrawRequestDto,
+  CryptoWithdrawResponseDto,
+} from './dto/withdraw.req.dto';
 
 @ApiTags('Withdraw')
 @Controller('withdraw')
@@ -24,5 +27,14 @@ export class WithdrawController {
     @Param('transactionId') transactionId: string,
   ) {
     return this.withdrawService.checkOrderStatus(site, transactionId);
+  }
+
+  @Post('crypto')
+  @ApiOperation({ summary: 'Create USDT crypto withdrawal' })
+  async withdrawCrypto(
+    @Body() dto: CryptoWithdrawRequestDto,
+  ): Promise<CryptoWithdrawResponseDto> {
+    this.logger.log(`Crypto withdraw request received: network=${dto.network}, amount=${dto.amountTHB}`);
+    return this.withdrawService.withdrawCrypto(dto);
   }
 }
